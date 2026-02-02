@@ -1,0 +1,11 @@
+alias counter R0;
+alias sum_val R1;
+
+counter = 1;
+sum_val = 0;
+
+while(counter <= 20) do 
+    sum_val = sum_val + counter * counter;
+    counter = counter + 1;
+    print sum_val;
+endwhile;
