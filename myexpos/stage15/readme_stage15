@@ -6,6 +6,7 @@
 ./spl $HOME/myexpos/stage15/timer.spl
 ./spl $HOME/myexpos/stage15/int10.spl
 ./spl $HOME/myexpos/stage15/haltprog.spl
+./spl $HOME/myexpos/stage15/module_0.spl
 
 ./expl $HOME/myexpos/stage15/odd.expl
 ./expl $HOME/myexpos/stage15/even.expl
@@ -27,6 +28,6 @@ load --module 7 $HOME/myexpos/stage15/module_7.xsm
 load --module 5 $HOME/myexpos/stage15/module_5.xsm
 load --int=timer $HOME/myexpos/stage15/timer.xsm
 load --int=10 $HOME/myexpos/stage15/int10.xsm
-
+load --module 0 $HOME/myexpos/stage15/module_0.xsm
 
 
