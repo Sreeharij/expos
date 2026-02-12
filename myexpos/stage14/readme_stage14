@@ -1,0 +1,28 @@
+./expl $HOME/myexpos/stage14/odd.expl
+./expl $HOME/myexpos/stage14/even.expl
+./expl $HOME/myexpos/stage14/idle.expl
+
+./spl $HOME/myexpos/stage14/module_7.spl
+./spl $HOME/myexpos/stage14/module_5.spl
+./spl $HOME/myexpos/stage14/timer.spl
+./spl $HOME/myexpos/stage14/os_startup.spl
+./spl $HOME/myexpos/stage14/int7.spl
+./spl $HOME/myexpos/stage14/int10.spl
+./spl $HOME/myexpos/stage14/haltprog.spl
+
+
+load --library $HOME/myexpos/expl/library.lib
+
+load --init $HOME/myexpos/stage14/odd.xsm
+load --exec $HOME/myexpos/stage14/even.xsm
+load --idle $HOME/myexpos/stage14/idle.xsm
+load --module 7 $HOME/myexpos/stage14/module_7.xsm
+load --module 5 $HOME/myexpos/stage14/module_5.xsm
+load --int=timer $HOME/myexpos/stage14/timer.xsm
+load --os $HOME/myexpos/stage14/os_startup.xsm
+load --int=7 $HOME/myexpos/stage14/int7.xsm
+load --int=10 $HOME/myexpos/stage14/int10.xsm
+load --exhandler $HOME/myexpos/stage14/haltprog.xsm
+
+
+
