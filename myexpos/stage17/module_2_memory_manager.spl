@@ -1,0 +1,48 @@
+alias functionNum R1;
+alias pageNum R2;
+
+if(functionNum == GET_FREE_PAGE) then
+    alias i R3;
+
+    [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1; //increment WAIT_MEM_COUNT
+    
+    while([SYSTEM_STATUS_TABLE + 2] == 0) do //MEM_FREE_COUNT = 0
+        [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 4] = WAIT_MEM;
+        multipush(R1,R2,R3);
+        call MOD_5;
+        multipop(R1,R2,R3);
+    endwhile;
+
+    [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] - 1; //decrement WAIT_MEM_COUNT
+    [SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1; //decrement MEM_FREE_COUNT
+
+    i = 80; //first 80 reserved for kernel
+    while(i < 128) do 
+        if([MEMORY_FREE_LIST + i] == 0) then
+            [MEMORY_FREE_LIST + i] = 1;
+            R0 = i;
+            break;
+        endif;
+        i = i + 1;
+    endwhile;
+    
+    return;
+endif;
+
+if(functionNum == RELEASE_PAGE) then
+    alias i R3;
+    [MEMORY_FREE_LIST + pageNum] = [MEMORY_FREE_LIST + pageNum] - 1;
+    if([MEMORY_FREE_LIST + pageNum] == 0) then // if that page becomes free then increment the memory free count
+        [SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] + 1; //increment MEM_FREE_COUNT
+    endif;
+    
+    i = 1; //dont touch idle
+    while(i < MAX_PROC_NUM) do 
+        if([PROCESS_TABLE + i*16 + 4] == WAIT_MEM) then 
+            [PROCESS_TABLE + i*16 + 4] = READY;
+        endif;
+        i = i+1;
+    endwhile;
+    return;
+
+endif;

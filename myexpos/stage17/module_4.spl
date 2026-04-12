@@ -1,0 +1,48 @@
+alias functionNum R1;
+alias currentPID R2;
+alias word R3;
+
+//Terminal Write
+if(functionNum == 3) then 
+    //in current function (terminal write) R3 contains the word value
+    multipush(R1, R2, R3);
+    functionNum = 8; //setting functionNum for next module call 
+    call MOD_0;
+    multipop(R1,R2,R3);
+
+    print word;
+
+    multipush(R1,R2,R3);
+    functionNum = 9; //setting functionNum for next module call 
+    call MOD_0;
+    multipop(R1,R2,R3);
+
+    return;
+
+endif;
+
+//Terminal Read
+if(functionNum == 4)then
+    alias wordAddr R3; //in current function (terminal read ) R3 contains word address 
+    multipush(R1, R2, R3);
+    functionNum = 8;
+    call MOD_0;
+    multipop(R1,R2,R3);
+
+    read;
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 4] = WAIT_TERMINAL;
+
+
+    multipush(R1,R2,R3);
+    call MOD_5;
+    multipop(R1,R2,R3);
+
+    //wordAddr is logical memory, physical address is computed below and the data from input buffer of process from process table in copied onto the computed physical address
+
+    [[PTBR + 2*(wordAddr/512)]*512 + wordAddr%512] = [PROCESS_TABLE + currentPID*16 + 8];
+
+    return;
+
+endif;
+
+return;

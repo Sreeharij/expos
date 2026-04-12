@@ -1,0 +1,67 @@
+//process manager module
+
+alias functionNum R1;
+alias currentPID R2;
+
+if(functionNum == FREE_USER_AREA_PAGE) then
+    alias userAreaPage R3;
+    userAreaPage = [PROCESS_TABLE + currentPID * 16 + 11];
+    
+    multipush(R1,R2,R3);
+
+    R1 = RELEASE_PAGE;
+    R2 = userAreaPage;
+    call MOD_2;
+
+    multipop(R1,R2,R3);
+
+    return;
+endif;
+
+if(functionNum == EXIT_PROCESS) then
+
+    multipush(R1,R2);
+
+    R1 = FREE_PAGE_TABLE;
+    R2 = currentPID; //actually implicit
+    call MOD_1;
+
+    R1 = FREE_USER_AREA_PAGE;
+    R2 = currentPID;
+    call MOD_1;
+
+    multipop(R1,R2);
+
+    [PROCESS_TABLE + currentPID*16 + 4] = TERMINATED;
+
+    return;
+endif;
+
+if(functionNum == FREE_PAGE_TABLE) then
+    alias i R3;
+    alias pageTableEntry R4;
+    
+    [PTBR + 0] = -1;
+    [PTBR + 1] = "0000";        
+
+    [PTBR + 3] = -1;
+    [PTBR + 0] = "0000";
+
+    i = 0;
+    while(i < (PTLR-2)) do 
+        pageTableEntry = [PTBR + 4 + 2*i];
+        if(pageTableEntry != -1) then
+            multipush(R1,R2,R3,R4);
+
+            R1 = RELEASE_PAGE;
+            R2 = pageTableEntry;
+            call MOD_2;
+
+            multipop(R1,R2,R3,R4);
+            [PTBR + 4 + 2*i] = -1;
+            [PTBR + 4 + 2*i + 1] = "0000"; 
+        endif;
+        i = i+1;
+    endwhile;
+    return;
+endif;

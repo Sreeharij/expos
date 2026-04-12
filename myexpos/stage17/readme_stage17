@@ -1,0 +1,52 @@
+/* NEW FILES */
+
+./spl $HOME/myexpos/stage17/int9_exec_syscal.spl
+./spl $HOME/myexpos/stage17/module_1_process_manager.spl
+./spl $HOME/myexpos/stage17/module_2_memory_manager.spl
+./spl $HOME/myexpos/stage17/module_7_boot_module.spl
+
+./expl $HOME/myexpos/stage17/assg1_init_prog.expl
+./expl $HOME/myexpos/stage17/odd.expl
+
+
+/* OLD FILES */ 
+./spl $HOME/myexpos/stage17/module_4.spl
+./spl $HOME/myexpos/stage17/int6.spl
+./spl $HOME/myexpos/stage17/console_interrupt.spl
+./spl $HOME/myexpos/stage17/module_0.spl
+./spl $HOME/myexpos/stage17/int7.spl
+./spl $HOME/myexpos/stage17/os_startup.spl
+./spl $HOME/myexpos/stage17/module_5.spl
+./spl $HOME/myexpos/stage17/timer.spl
+./spl $HOME/myexpos/stage17/int10.spl
+./spl $HOME/myexpos/stage17/haltprog.spl
+
+./expl $HOME/myexpos/stage17/idle.expl
+
+
+
+
+
+/*NEW FILES */
+
+load --init $HOME/myexpos/stage17/assg1_init_prog.xsm
+load --exec $HOME/myexpos/stage17/odd.xsm
+load --module 1 $HOME/myexpos/stage17/module_1_process_manager.xsm
+load --module 2 $HOME/myexpos/stage17/module_2_memory_manager.xsm
+load --module 7 $HOME/myexpos/stage17/module_7_boot_module.xsm
+load --int=9 $HOME/myexpos/stage17/int9_exec_syscal.xsm
+
+/* OLD FILES */
+load --module 4 $HOME/myexpos/stage17/module_4.xsm
+load --int=6 $HOME/myexpos/stage17/int6.xsm
+load --int=console $HOME/myexpos/stage17/console_interrupt.xsm
+
+load --library $HOME/myexpos/expl/library.lib
+load --idle $HOME/myexpos/stage17/idle.xsm
+load --os $HOME/myexpos/stage17/os_startup.xsm
+load --module 0 $HOME/myexpos/stage17/module_0.xsm
+load --module 5 $HOME/myexpos/stage17/module_5.xsm
+load --exhandler $HOME/myexpos/stage17/haltprog.xsm
+load --int=timer $HOME/myexpos/stage17/timer.xsm
+load --int=7 $HOME/myexpos/stage17/int7.xsm
+load --int=10 $HOME/myexpos/stage17/int10.xsm
