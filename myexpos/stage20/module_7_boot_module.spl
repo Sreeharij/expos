@@ -1,0 +1,185 @@
+alias i R0;
+alias perProcessTable R1;
+
+//load disk free list 
+loadi(61,2);
+
+//exception
+loadi(2, 15);
+loadi(3, 16);
+
+//timer
+loadi(4, 17);
+loadi(5, 18);
+
+//console_interrupt
+loadi(8,21);
+loadi(9,22);
+
+//disk interrupt
+loadi(6,19);
+loadi(7,20);
+
+//int6
+loadi(14,27);
+loadi(15,28);
+
+//int7
+loadi(16,29);
+loadi(17,30);
+
+//int8
+loadi(18,31);
+loadi(19,32);
+
+//int9
+loadi(20,33);
+loadi(21,34);
+
+//halt or int10
+loadi(22,35);
+loadi(23,36);
+
+//scheduler
+loadi(50,63);
+loadi(51,64);
+
+//library
+loadi(63,13);
+loadi(64,14);
+
+//init
+loadi(65,7);
+loadi(66,8);
+
+//module 0
+loadi(40,53);
+loadi(41,54);
+
+//module 1
+loadi(42,55);
+loadi(43,56);
+
+//module 2
+loadi(44,57);
+loadi(45,58);
+
+//module 4
+loadi(48,61);
+loadi(49,62);
+
+//loading inode table
+loadi(59,3);
+loadi(60,4);
+
+// loading second process
+// loadi(83,69); not loaded
+
+//initializing Terminal status table
+[TERMINAL_STATUS_TABLE + 0] = 0;
+
+//initializing disk status table
+[DISK_STATUS_TABLE + 0] = 0;
+
+//setting process table state to terminated
+multipush(R0);
+i = 0;
+while(i<16) do
+    [PROCESS_TABLE + 16*i + 4] = TERMINATED;
+    i = i + 1;
+endwhile;
+multipop(R0);
+
+//initializing memory free list with value 1 for pages used and 0 for free pages
+i = 0;
+while(i < NUM_MEM_PAGES) do
+    if(i < 83) then //refer OS startup code and module_7 boot module, we find that pages till and including 82 are used so free page starts from 83
+        [MEMORY_FREE_LIST + i] = 1;
+    else
+        [MEMORY_FREE_LIST + i] = 0;
+    endif;
+    i = i + 1;
+endwhile;
+
+//initialise the fields WAIT_MEM_COUNT to 0 and MEM_FREE_COUNT = number of free pages 
+[SYSTEM_STATUS_TABLE + 3] = 0;
+[SYSTEM_STATUS_TABLE + 2] = 45;
+
+//init_page_Table
+PTBR = PAGE_TABLE_BASE+20;
+PTLR = 10;
+
+//Library
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+//Heap
+[PTBR+4] = 78;
+[PTBR+5] = "0110";
+[PTBR+6] = 79;
+[PTBR+7] = "0110";
+
+//Code
+[PTBR+8] = 65;
+[PTBR+9] = "0100";
+[PTBR+10] = 66;
+[PTBR+11] = "0100";
+[PTBR+12] = -1;
+[PTBR+13] = "0000";
+[PTBR+14] = -1;
+[PTBR+15] = "0000";
+
+//Stack
+[PTBR+16] = 76;
+[PTBR+17] = "0110";
+[PTBR+18] = 77;
+[PTBR+19] = "0110";
+
+
+//pid_for_init
+[PROCESS_TABLE + 16 + 1] = 1;
+
+//init_process_gets_Scheduled_first
+
+[PROCESS_TABLE + 16 + 4] = CREATED;
+
+//user_area_page
+[PROCESS_TABLE + 16 + 11] = 80;
+
+//KPTR_for_init
+[PROCESS_TABLE + 16  + 12] = 0;
+
+//UPTR_for_init
+[PROCESS_TABLE + 16  + 13] = 8*512;
+
+//PTBR_for_init
+[PROCESS_TABLE + 16 + 14] = PTBR;
+
+//PTLR_for_init
+[PROCESS_TABLE + 16 + 15] = PTLR;
+
+
+[ 76 * 512 ] = [65 * 512 + 1];
+
+//initialize per process resource table of init process
+perProcessTable = ([PROCESS_TABLE + 16 + 11] + 1)*512 - 16;
+i=0;
+while(i<16) do 
+    [perProcessTable + i] = -1;
+    i = i + 1;
+endwhile;
+
+//initialising disk map table entries for init 
+i=2;
+while(i < 10) do 
+    if(i < 4 || i > 7) then 
+        [DISK_MAP_TABLE + 10*1 + i] = -1;
+    else 
+        [DISK_MAP_TABLE + 10*1 + i] = [INODE_TABLE + 16*1 + 8 + (i-4)];
+    endif;
+    i = i + 1;
+endwhile;
+
+return;

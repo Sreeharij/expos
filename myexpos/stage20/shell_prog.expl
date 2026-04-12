@@ -1,0 +1,14 @@
+int main(){
+    decl
+        str progName;
+        int temp;
+    enddecl
+    begin 
+        temp = exposcall("Read", -1 ,progName);
+        temp = exposcall("Exec", progName);
+        if(temp != 0) then
+            temp = exposcall("Write", -2, "Exec il errr");
+        endif;
+        return 0;
+    end 
+}

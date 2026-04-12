@@ -1,0 +1,25 @@
+alias reqPID R0;
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 13] = SP;
+
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11]*512 - 1;
+backup;
+
+reqPID = [TERMINAL_STATUS_TABLE + 1];
+
+[PROCESS_TABLE + reqPID*16 + 8] = P0;
+
+multipush(R0);
+
+R1 = 9; //functionNum for release terminal in module 0;
+R2 = reqPID; //process with reqPID is the one holding the terminal and that process needs to release it
+
+call MOD_0;
+
+multipop(R0);
+
+restore;
+
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE +1]*16 + 13];
+
+ireturn;
