@@ -1,0 +1,96 @@
+alias functionNumber R1;
+alias currentPID R2;
+
+if (functionNumber == DISK_STORE) then
+    alias pageNumber R3;
+    alias blockNumber R4;
+
+    // call disk acquire
+    multipush(R0, R1, R2, R3, R4);
+    functionNumber = ACQUIRE_DISK;
+    R2 = currentPID; //implicit
+    call RESOURCE_MANAGER;
+    multipop(R0, R1, R2, R3, R4);
+
+    // set the load/store bit, the page number and the blocknumber
+    [DISK_STATUS_TABLE + 1] = 1;
+    [DISK_STATUS_TABLE + 2] = pageNumber;
+    [DISK_STATUS_TABLE + 3] = blockNumber;
+
+    // store the pagenumber to the blocknumber
+    store(pageNumber, blockNumber);
+
+    // set to wait disk and call scheduler
+    [PROCESS_TABLE + (currentPID*16) + 4] = WAIT_DISK;
+
+    multipush(R0, R1, R2, R3, R4);
+    call SCHEDULER;
+    multipop(R0, R1, R2, R3, R4);
+endif;
+
+if (functionNumber == DISK_LOAD) then 
+    alias pageNumber R3;
+    alias blockNumber R4;
+
+    // call disk acquire
+    multipush(R0, R1, R2, R3, R4);
+    functionNumber = ACQUIRE_DISK;
+    R2 = currentPID; //implicit
+    call RESOURCE_MANAGER;
+    multipop(R0, R1, R2, R3, R4);
+
+    // reset the load/store bit, the page number and the blocknumber
+    [DISK_STATUS_TABLE + 1] = 0;
+    [DISK_STATUS_TABLE + 2] = pageNumber;
+    [DISK_STATUS_TABLE + 3] = blockNumber;
+
+    //load the blocknumber to the pagenumber
+    load(pageNumber, blockNumber);
+
+    [PROCESS_TABLE + (currentPID * 16) + 4] = WAIT_DISK;
+
+    // set to wait disk and call scheduler
+    multipush(R0, R1, R2, R3, R4);
+    call SCHEDULER;
+    multipop(R0, R1, R2, R3, R4);
+endif;
+
+if (functionNumber == TERMINAL_WRITE) then 
+    alias word R3;
+
+    // call terminal acquire
+    multipush(R0, R1, R2, R3);
+    functionNumber = 8;
+    call RESOURCE_MANAGER;
+    multipop(R0, R1, R2, R3);
+    
+    print word;
+
+    // call terminal release
+    multipush(R0, R1, R2, R3);
+    functionNumber = 9;
+    call RESOURCE_MANAGER;
+    multipop(R0, R1, R2, R3);
+endif;
+
+if (functionNumber == TERMINAL_READ) then
+    alias word R3;
+
+    multipush(R0, R1, R2, R3);
+    functionNumber = 8;
+    call RESOURCE_MANAGER;
+    multipop(R0, R1, R2, R3);
+    //breakpoint;
+    read;
+    //breakpoint;
+    [PROCESS_TABLE + (currentPID * 16) + 4] = WAIT_TERMINAL;
+    
+    multipush(R0, R1, R2, R3);
+    call SCHEDULER;
+    multipop(R0, R1, R2, R3);
+
+    alias physicalAddress R4;
+    physicalAddress = [PTBR + 2 * ((word)/512)] * 512 + (word)%512;
+    [physicalAddress] = [PROCESS_TABLE + (currentPID*16) + 8];
+endif;
+return;

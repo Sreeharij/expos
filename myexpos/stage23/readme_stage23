@@ -1,0 +1,60 @@
+./expl $HOME/myexpos/stage23/assg1.expl
+./spl $HOME/myexpos/stage23/int4_create_delete_syscall.spl
+./spl $HOME/myexpos/stage23/int15_shutdown_syscall.spl
+./spl $HOME/myexpos/stage23/module_0_resource_manager.spl
+./spl $HOME/myexpos/stage23/module_4_device_manager.spl
+./spl $HOME/myexpos/stage23/module_7_boot_module.spl
+
+./spl $HOME/myexpos/stage23/os_startup.spl
+./spl $HOME/myexpos/stage23/module_1_process_manager.spl
+./spl $HOME/myexpos/stage23/module_2_memory_manager.spl
+./spl $HOME/myexpos/stage23/module_5_scheduler.spl
+./spl $HOME/myexpos/stage23/int6.spl
+./spl $HOME/myexpos/stage23/int7.spl
+./spl $HOME/myexpos/stage23/int8_fork_syscal.spl
+./spl $HOME/myexpos/stage23/int9_exec_syscal.spl
+./spl $HOME/myexpos/stage23/int10_exit_syscal.spl
+./spl $HOME/myexpos/stage23/int11.spl
+./spl $HOME/myexpos/stage23/int13_semaphoreGetRelease.spl
+./spl $HOME/myexpos/stage23/int14_semaphoreLockUnlock.spl
+./spl $HOME/myexpos/stage23/timer.spl
+./spl $HOME/myexpos/stage23/console_interrupt.spl
+./spl $HOME/myexpos/stage23/disk_interrupt.spl
+./spl $HOME/myexpos/stage23/exception_handler.spl
+./expl $HOME/myexpos/stage23/idle.expl
+./expl $HOME/myexpos/stage23/shell_init.expl
+./expl $HOME/myexpos/stage23/odd.expl
+./expl $HOME/myexpos/stage23/even.expl
+
+
+
+fdisk
+load --int=15 $HOME/myexpos/stage23/int15_shutdown_syscall.xsm
+load --int=4 $HOME/myexpos/stage23/int4_create_delete_syscall.xsm
+load --module 0 $HOME/myexpos/stage23/module_0_resource_manager.xsm
+load --module 4 $HOME/myexpos/stage23/module_4_device_manager.xsm
+load --module 7 $HOME/myexpos/stage23/module_7_boot_module.xsm
+load --exec $HOME/myexpos/stage23/assg1.xsm
+
+
+load --os $HOME/myexpos/stage23/os_startup.xsm
+load --library $HOME/myexpos/expl/library.lib
+load --module 1 $HOME/myexpos/stage23/module_1_process_manager.xsm
+load --module 2 $HOME/myexpos/stage23/module_2_memory_manager.xsm
+load --module 5 $HOME/myexpos/stage23/module_5_scheduler.xsm
+load --int=6 $HOME/myexpos/stage23/int6.xsm
+load --int=7 $HOME/myexpos/stage23/int7.xsm
+load --int=8 $HOME/myexpos/stage23/int8_fork_syscal.xsm
+load --int=9 $HOME/myexpos/stage23/int9_exec_syscal.xsm
+load --int=10 $HOME/myexpos/stage23/int10_exit_syscal.xsm
+load --int=11 $HOME/myexpos/stage23/int11.xsm
+load --int=13 $HOME/myexpos/stage23/int13_semaphoreGetRelease.xsm
+load --int=14 $HOME/myexpos/stage23/int14_semaphoreLockUnlock.xsm
+load --int=timer $HOME/myexpos/stage23/timer.xsm
+load --int=console $HOME/myexpos/stage23/console_interrupt.xsm
+load --int=disk $HOME/myexpos/stage23/disk_interrupt.xsm
+load --exhandler $HOME/myexpos/stage23/exception_handler.xsm 
+load --idle $HOME/myexpos/stage23/idle.xsm 
+load --init $HOME/myexpos/stage23/shell_init.xsm
+load --exec $HOME/myexpos/stage23/odd.xsm
+load --exec $HOME/myexpos/stage23/even.xsm
