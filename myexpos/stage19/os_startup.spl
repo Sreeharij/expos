@@ -1,0 +1,62 @@
+// Load module 7 from disk blocks 67 and 68 to memory pages 54 and 55
+// respectively
+loadi(54, 67);
+loadi(55, 68);
+
+// load idle process from disk blocks 11-12 to memory 69-70
+loadi(69, 11);
+loadi(70, 12);
+
+// Setting up SP to kernal stack of idle process.
+SP = 82 * 512 - 1;
+
+call BOOT_MODULE;
+
+PTBR = PAGE_TABLE_BASE;
+PTLR = 10;
+
+// Setting up entries for idle process
+
+// Library
+[PTBR + 0] = -1;
+[PTBR + 1] = "0000";
+[PTBR + 2] = -1;
+[PTBR + 3] = "0000";
+
+// Heap
+[PTBR + 4] = -1;
+[PTBR + 5] = "0000";
+[PTBR + 6] = -1;
+[PTBR + 7] = "0000";
+
+// Code
+[PTBR + 8] = 69;
+[PTBR + 9] = "0100";
+[PTBR + 10] = 70;
+[PTBR + 11] = "0100";
+[PTBR + 12] = -1;
+[PTBR + 13] = "0000";
+[PTBR + 14] = -1;
+[PTBR + 15] = "0000";
+
+/// Stack
+[PTBR + 16] = 81;
+[PTBR + 17] = "0110";
+[PTBR + 18] = -1;
+[PTBR + 19] = "0000";
+
+SP = 8 * 512;
+[81 * 512] = [69 * 512 + 1];
+
+[PROCESS_TABLE + 1] = 0;        // PID for idle is 0
+[PROCESS_TABLE + 4] = RUNNING;  // status
+[PROCESS_TABLE + 11] = 82;      // User area page
+[PROCESS_TABLE + 12] = 0;       // KPTR for idle
+[PROCESS_TABLE + 13] = 8 * 512; // UPTR FOR IDLE
+[PROCESS_TABLE + 14] = PAGE_TABLE_BASE;
+[PROCESS_TABLE + 15] = 10;
+
+// set current process id = 0
+[SYSTEM_STATUS_TABLE + 1] = 0;
+
+ireturn;

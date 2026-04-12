@@ -1,0 +1,43 @@
+/* NEW FILES */
+./spl $HOME/myexpos/stage19/exception_handler.spl
+./spl $HOME/myexpos/stage19/int9_exec_syscal.spl
+./spl $HOME/myexpos/stage19/module_1_process_manager.spl
+./spl $HOME/myexpos/stage19/module_2_memory_manager.spl
+./spl $HOME/myexpos/stage19/module_7_boot_module.spl
+
+
+/* OLD FILES */
+./spl $HOME/myexpos/stage19/disk_interrupt.spl
+./spl $HOME/myexpos/stage19/module_0_resource_manager.spl
+./spl $HOME/myexpos/stage19/module_4_device_manager.spl
+./spl $HOME/myexpos/stage19/int6.spl
+./spl $HOME/myexpos/stage19/console_interrupt.spl
+./spl $HOME/myexpos/stage19/int7.spl
+./spl $HOME/myexpos/stage19/os_startup.spl
+./spl $HOME/myexpos/stage19/module_5.spl
+./spl $HOME/myexpos/stage19/timer.spl
+./spl $HOME/myexpos/stage19/int10.spl
+
+./expl $HOME/myexpos/stage19/idle.expl
+./expl $HOME/myexpos/stage19/shell_prog.expl
+./expl $HOME/myexpos/stage19/odd.expl
+
+load --module 2 $HOME/myexpos/stage19/module_2_memory_manager.xsm
+load --exhandler $HOME/myexpos/stage19/exception_handler.xsm
+load --module 1 $HOME/myexpos/stage19/module_1_process_manager.xsm
+load --int=9 $HOME/myexpos/stage19/int9_exec_syscal.xsm
+load --module 7 $HOME/myexpos/stage19/module_7_boot_module.xsm
+load --os $HOME/myexpos/stage19/os_startup.xsm
+load --init $HOME/myexpos/stage19/shell_prog.xsm
+load --exec $HOME/myexpos/stage19/odd.xsm
+load --module 4 $HOME/myexpos/stage19/module_4_device_manager.xsm
+load --int=6 $HOME/myexpos/stage19/int6.xsm
+load --int=console $HOME/myexpos/stage19/console_interrupt.xsm
+load --int=disk $HOME/myexpos/stage19/disk_interrupt.xsm
+load --library $HOME/myexpos/expl/library.lib
+load --idle $HOME/myexpos/stage19/idle.xsm
+load --module 0 $HOME/myexpos/stage19/module_0_resource_manager.xsm
+load --module 5 $HOME/myexpos/stage19/module_5.xsm
+load --int=timer $HOME/myexpos/stage19/timer.xsm
+load --int=7 $HOME/myexpos/stage19/int7.xsm
+load --int=10 $HOME/myexpos/stage19/int10.xsm
