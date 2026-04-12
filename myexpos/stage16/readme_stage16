@@ -1,0 +1,32 @@
+./spl $HOME/myexpos/stage16/module_4.spl
+./spl $HOME/myexpos/stage16/module_7.spl
+./spl $HOME/myexpos/stage16/int6.spl
+./spl $HOME/myexpos/stage16/console_interrupt.spl
+
+./spl $HOME/myexpos/stage16/module_0.spl
+./spl $HOME/myexpos/stage16/int7.spl
+./spl $HOME/myexpos/stage16/os_startup.spl
+./spl $HOME/myexpos/stage16/module_5.spl
+./spl $HOME/myexpos/stage16/timer.spl
+./spl $HOME/myexpos/stage16/int10.spl
+./spl $HOME/myexpos/stage16/haltprog.spl
+
+./expl $HOME/myexpos/stage16/idle.expl
+./expl $HOME/myexpos/stage16/inputGCD.expl
+
+
+load --module 4 $HOME/myexpos/stage16/module_4.xsm
+load --module 7 $HOME/myexpos/stage16/module_7.xsm
+load --int=6 $HOME/myexpos/stage16/int6.xsm
+load --int=console $HOME/myexpos/stage16/console_interrupt.xsm
+
+load --library $HOME/myexpos/expl/library.lib
+load --idle $HOME/myexpos/stage16/idle.xsm
+load --init $HOME/myexpos/stage16/inputGCD.xsm
+load --os $HOME/myexpos/stage16/os_startup.xsm
+load --module 0 $HOME/myexpos/stage16/module_0.xsm
+load --module 5 $HOME/myexpos/stage16/module_5.xsm
+load --exhandler $HOME/myexpos/stage16/haltprog.xsm
+load --int=timer $HOME/myexpos/stage16/timer.xsm
+load --int=7 $HOME/myexpos/stage16/int7.xsm
+load --int=10 $HOME/myexpos/stage16/int10.xsm
