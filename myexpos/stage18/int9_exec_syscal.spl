@@ -1,0 +1,138 @@
+//EXEC system call
+alias userSP R0;
+alias filename R1;
+alias i R2;
+alias inodeIndex R3;
+alias userAreaPage R4;
+alias codeLength R5;
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 13] = SP; 
+
+userSP = SP;
+
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11]*512 - 1;
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 9] = 9;
+
+
+filename = [[PTBR + 2 * ((userSP - 4)/512)] * 512 + ((userSP - 4)%512)];
+
+i = 0;
+while(i < MAX_FILE_NUM) do 
+    if([INODE_TABLE + 16 * i + 1] == filename && [INODE_TABLE + 16*i + 0] == EXEC) then
+        inodeIndex = i;
+        break;
+    endif;
+    i = i + 1;
+endwhile;
+
+if(i == MAX_FILE_NUM) then 
+    [[PTBR + 2 * ((userSP - 1)/512)] * 512 + ((userSP - 1)%512)] = -1;
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 9] = 0;
+    SP = userSP;
+    ireturn;
+endif;
+
+multipush(R0,R1,R2,R3,R4,R5);
+
+// README - if error, rewrite below to constant value 3
+R1 = EXIT_PROCESS; //EXIT_PROCESS = 3, function number for exit process in process manager module
+R2 = [SYSTEM_STATUS_TABLE + 1]; //pid as argument for the process manager module
+
+call PROCESS_MANAGER; //process manager module
+
+multipop(R0,R1,R2,R3,R4,R5);
+
+userAreaPage = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11];
+[MEMORY_FREE_LIST + userAreaPage] = [MEMORY_FREE_LIST + userAreaPage] + 1; 
+[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1; //decrementing the MEM_FREE_COUNT field in the system status table.
+
+SP = userAreaPage * 512; 
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 4] = RUNNING; //setting state in process table
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 7] = inodeIndex; //INODE INDEX field in process table
+
+[PTBR + 0] = 63;
+[PTBR + 1] = "0100";
+[PTBR + 2] = 64;
+[PTBR + 3] = "0100";
+
+multipush(R0,R1,R2,R3,R4,R5);
+
+R1 = 1; //Function Number for get free page in memory manager module (MOD_2)
+call MEMORY_MANAGER; //calling memory manager module
+[PTBR + 4] = R0; //return value of MEMORY_MANAGER call 
+[PTBR + 5] = "0110";
+
+R1 = 1;
+call MEMORY_MANAGER;
+[PTBR + 6] = R0;
+[PTBR + 7] = "0110";
+
+//Below we do 2 stack pages 
+R1 = 1;
+call MEMORY_MANAGER;
+[PTBR + 16] = R0;
+[PTBR + 17] = "0110";
+
+R1 = 1;
+call MEMORY_MANAGER;
+[PTBR + 18] = R0;
+[PTBR + 19] = "0110";
+
+multipop(R0,R1,R2,R3,R4,R5);
+
+codeLength =(([INODE_TABLE + 16 * inodeIndex + 2] - 1)/512) + 1;
+
+i = 0;
+
+multipush(R0,R1,R2,R3,R4,R5);
+
+while(i < 4) do
+    if(i < codeLength) then
+        R1 = 1; //Function Number for get free page in memory manager module (MOD_2);
+        call MEMORY_MANAGER;
+        [PTBR + 8 + 2 * i + 0] = R0;
+        [PTBR + 8 + 2 * i + 1] = "0100";
+    else 
+        [PTBR + 8 + 2 * i + 0] = -1;
+        [PTBR + 8 + 2 * i + 1] = "0000";
+    endif;
+    i = i + 1;
+endwhile;
+
+multipop(R0,R1,R2,R3,R4,R5);
+
+i=0;
+while(i < codeLength) do 
+    multipush(R0,R1,R2,R3,R4,R5);
+    //R3 and R4 are computed first because the variable i is the register R2.
+    //If R2 is changed before computing R3 and R4, then the values of R3 and R4 will be wrong.
+    //R4 must be computed first because inodeIndex is R3 which we modify afterwards.
+
+    R4 = [INODE_TABLE + inodeIndex * 16 + 8 + i];
+    R3 = [PTBR + 8 + 2*i];
+    R1 = DISK_LOAD;
+    R2 = [SYSTEM_STATUS_TABLE + 1];
+    call DEVICE_MANAGER;
+    multipop(R0,R1,R2,R3,R4,R5);
+
+    i = i+1;
+endwhile;
+
+//setting the last 8 entries of userAreaPage (which denotes per-process resource table) to -1.
+//each entry has 2 words, and the starting word is set to -1 to invalidate the entry
+//at present a fresh process is created, so no resources are allocated to it.
+i=0;
+while(i < 16) do 
+    [(userAreaPage + 1)*512 - 16 + i] = -1;
+    i = i + 1;
+endwhile;
+
+[[PTBR + 16]*512] = [[PTBR + 8]*512 + 1];
+
+SP = 8*512;
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 9] = 0;
+
+ireturn;
