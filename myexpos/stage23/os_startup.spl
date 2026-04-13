@@ -97,6 +97,9 @@ loadi (66, 8);
 loadi (69, 11);
 loadi (70, 12);
 
+//load root file
+loadi(62, 5);
+
 // setting SP to physical address of kernal IDLE stack
 SP = 82 * 512 - 1;
 
