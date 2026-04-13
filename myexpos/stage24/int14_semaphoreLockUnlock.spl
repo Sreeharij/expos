@@ -1,0 +1,70 @@
+alias syscallNumber R1; 
+alias userSP R5;
+alias processTable R6;
+alias resourceTable R7;
+
+userSP = SP;
+processTable = PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16;
+resourceTable = [processTable + 11]*512 + RESOURCE_TABLE_OFFSET;
+
+[processTable + 13] = SP;
+SP = [processTable + 11]*512 - 1;
+
+syscallNumber = [[PTBR + 2*((userSP - 5)/512)]*512 + (userSP-5)%512];
+[processTable + 9] = syscallNumber;
+
+if(syscallNumber == INT_SEMLOCK) then 
+    alias SEMID R2;
+    alias semTableIdx R3;
+    SEMID = [[PTBR + 2*((userSP-4)/512)]*512 + (userSP-4)%512];
+
+    if(SEMID < 0 || SEMID > 7 || [resourceTable + 2*SEMID] != SEMAPHORE) then 
+        print "semLock eror";
+        [[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = -1;
+    else
+        semTableIdx = [resourceTable + 2*SEMID + 1];
+        while([SEMAPHORE_TABLE + semTableIdx*4] != -1 && [SEMAPHORE_TABLE + semTableIdx*4] != [SYSTEM_STATUS_TABLE + 1]) do 
+            [processTable + 4] = WAIT_SEMAPHORE;
+            [processTable + 5] = semTableIdx;
+
+            multipush(R1,R2,R3,R5,R6,R7);
+            call SCHEDULER;
+            multipop(R1,R2,R3,R5,R6,R7);
+        endwhile;
+
+        [SEMAPHORE_TABLE + semTableIdx*4] = [SYSTEM_STATUS_TABLE + 1];
+        [[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = 0;
+    endif;
+endif; 
+
+if(syscallNumber == INT_SEMUNLOCK) then 
+    alias SEMID R2;
+    alias semTableIdx R3;
+    alias i R4;
+    
+    SEMID = [[PTBR + 2*((userSP-4)/512)]*512 + (userSP-4)%512]; 
+    if(SEMID < 0 || SEMID > 7 || [resourceTable + SEMID*2] != SEMAPHORE) then 
+        print "semUnlock eror";
+        [[PTBR + 2*((userSP - 1)/512)]*512 + (userSP - 1)%512] = -1;
+    else 
+        semTableIdx = [resourceTable + 2*SEMID + 1];
+        if([SEMAPHORE_TABLE + semTableIdx*4] != -1) then 
+            if([SEMAPHORE_TABLE + semTableIdx*4] != [SYSTEM_STATUS_TABLE+1]) then 
+                print "wrong pid unlocking";
+                [[PTBR + 2*((userSP - 1)/512)]*512 + (userSP - 1)%512] = -2;
+            endif;
+            [SEMAPHORE_TABLE + 4*semTableIdx] = -1;
+            i=1; //README not including idle process, come back on future error
+            while(i < MAX_PROC_NUM) do 
+                if([PROCESS_TABLE + i*16 + 4] == WAIT_SEMAPHORE && [PROCESS_TABLE + i*16+5] == semTableIdx) then
+                    [PROCESS_TABLE + i*16 + 4] = READY;
+                endif;
+                i = i+1;
+            endwhile;
+        endif;
+    endif;
+endif;
+
+[processTable + 9] = 0;
+SP = [processTable + 13];
+ireturn;

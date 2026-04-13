@@ -1,0 +1,146 @@
+alias functionNum R1;
+
+if(functionNum == OPEN) then 
+    alias filename R2;
+    alias i R3;
+    i = 0;
+    while(i < MAX_FILE_NUM) do 
+        if([INODE_TABLE + i*16 + 1] == filename) then 
+            break;
+        endif;
+        i = i + 1;
+    endwhile;
+
+    if(i == MAX_FILE_NUM) then 
+        R0 = -1;
+    else 
+        multipush(R1,R2,R3);
+        R1 = ACQUIRE_INODE;
+        R2 = i;
+        R3 = [SYSTEM_STATUS_TABLE + 1];
+        call RESOURCE_MANAGER;
+        multipop(R1,R2,R3);
+        if(R0 == -1) then //if locking fails return -1
+            R0 = -1;
+        else 
+            if([INODE_TABLE + i*16 + 0] == EXEC) then 
+                multipush(R1,R2,R3);
+                R1 = RELEASE_INODE;
+                R2 = i;
+                R3 = [SYSTEM_STATUS_TABLE+1];
+                call RESOURCE_MANAGER;
+                multipop(R1,R2,R3);
+                R0 = -1;
+            else 
+                alias OFTentry R4;
+                OFTentry = 0;
+                while(OFTentry < MAX_OPENFILE_NUM) do 
+                    if([OPEN_FILE_TABLE + OFTentry*4 + 0] == -1) then 
+                        break;
+                    endif;
+                    OFTentry = OFTentry + 1;
+                endwhile;
+                if(OFTentry == MAX_OPENFILE_NUM) then 
+                    multipush(R1,R2,R3,R4);
+                    R1 = RELEASE_INODE;
+                    R2 = i;
+                    R3 = [SYSTEM_STATUS_TABLE+1];
+                    call RESOURCE_MANAGER;
+                    multipop(R1,R2,R3,R4);
+                    R0 = -2;
+                else 
+                    if(filename == ROOT) then 
+                        [OPEN_FILE_TABLE + OFTentry*4 + 0] = INODE_ROOT;
+                    else 
+                        if([FILE_STATUS_TABLE + i*4 + 1] == -1) then 
+                            [FILE_STATUS_TABLE + i*4 + 1] = 1;
+                        else 
+                            [FILE_STATUS_TABLE + i*4 + 1] = [FILE_STATUS_TABLE + i*4 + 1] + 1;
+                        endif;  
+                        [OPEN_FILE_TABLE + OFTentry*4 + 0] = i;
+
+                    endif;
+                    [OPEN_FILE_TABLE + OFTentry*4 + 1] = 1;
+                    [OPEN_FILE_TABLE + OFTentry*4 + 2] = 0;
+
+                    multipush(R1,R2,R3,R4);
+                    R1 = RELEASE_INODE;
+                    R2 = i;
+                    R3 = [SYSTEM_STATUS_TABLE + 1];
+                    call RESOURCE_MANAGER;
+                    multipop(R1,R2,R3,R4);
+                    R0 = OFTentry;
+                endif;
+            endif;
+        endif;
+    endif;
+    return;
+endif;
+
+if(functionNum == CLOSE) then 
+    alias OFTentry R2; //given as argument 
+    alias inodeEntryIdx R3;
+    inodeEntryIdx = [OPEN_FILE_TABLE + OFTentry*4 + 0];
+    [OPEN_FILE_TABLE + OFTentry*4 + 1] = [OPEN_FILE_TABLE + OFTentry*4 + 1] - 1;
+    if([OPEN_FILE_TABLE + OFTentry*4 + 1] == 0) then 
+        [OPEN_FILE_TABLE + OFTentry*4 + 0] = -1; 
+        [OPEN_FILE_TABLE + OFTentry*4 + 1] = -1;
+        [OPEN_FILE_TABLE + OFTentry*4 + 2] = -1;
+        if(inodeEntryIdx != INODE_ROOT) then 
+            [FILE_STATUS_TABLE + inodeEntryIdx*4 + 1] = [FILE_STATUS_TABLE + inodeEntryIdx*4 + 1] - 1;
+
+            if([FILE_STATUS_TABLE + inodeEntryIdx*4 + 1] == 0) then 
+                [FILE_STATUS_TABLE + inodeEntryIdx*4 + 1] = -1;
+            endif;
+        endif;
+    endif;
+    return;
+endif;
+
+if(functionNum == BUFFERED_READ) then 
+
+    alias diskBlockNum R2;
+    alias offset R3;
+    alias memoryAddr R4;
+    
+
+    multipush(R1,R2,R3,R4);
+    R1 = ACQUIRE_BUFFER;
+    R2 = diskBlockNum%MAX_BUFFER;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;  
+    multipop(R1,R2,R3,R4);
+
+    if([BUFFER_TABLE + 4*(diskBlockNum%MAX_BUFFER) + 0] != diskBlockNum) then 
+        if([BUFFER_TABLE + 4*(diskBlockNum%MAX_BUFFER) + 1] == 1) then //dirty 
+            multipush(R1,R2,R3,R4);
+            R1 = DISK_STORE;
+            R3 = BUFFER_BASE + diskBlockNum%MAX_BUFFER;
+            R4 = [BUFFER_TABLE + 4*(diskBlockNum%MAX_BUFFER)];
+            R2 = [SYSTEM_STATUS_TABLE + 1];
+            call DEVICE_MANAGER;
+            multipop(R1,R2,R3,R4);
+            [BUFFER_TABLE + 4*(diskBlockNum%MAX_BUFFER) + 1] = 0;
+
+        endif;
+        multipush(R1,R2,R3,R4);
+        R1 = DISK_LOAD;
+        R3 = BUFFER_BASE + diskBlockNum%MAX_BUFFER;
+        R4 = diskBlockNum;
+        R2 = [SYSTEM_STATUS_TABLE + 1];
+        call DEVICE_MANAGER;
+        multipop(R1,R2,R3,R4);
+        [BUFFER_TABLE + 4*(diskBlockNum%MAX_BUFFER) + 0] = diskBlockNum;
+    endif;
+
+    [memoryAddr] = [(BUFFER_BASE + diskBlockNum%MAX_BUFFER)*512 + offset];
+
+    multipush(R1,R2,R3,R4);
+    R1 = RELEASE_BUFFER;
+    R2 = diskBlockNum%MAX_BUFFER;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+    multipop(R1,R2,R3,R4);
+
+    return;
+endif;

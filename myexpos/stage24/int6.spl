@@ -1,0 +1,94 @@
+alias userSP R1;
+alias fileDescriptorAddr R2;
+alias fileDescriptor R3;
+alias retValAddr R4;
+alias wordAddr R5;
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 9] =  7;
+userSP = SP;
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 13] = userSP;
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11]*512 - 1;
+
+fileDescriptorAddr = [PTBR + 2 * ((userSP - 4)/512)] * 512 + (userSP - 4)%512;
+
+fileDescriptor = [fileDescriptorAddr];
+
+retValAddr = [PTBR + 2 * ((userSP - 1)/512)]*512 + (userSP - 1)%512;
+
+if(fileDescriptor == -1) then 
+    wordAddr = [[PTBR + 2 * ((userSP - 3)/512)]*512 + (userSP - 3)%512];
+    multipush(R1,R2,R3,R4,R5);
+
+    R1 = 4; //functionNumber R1 
+    R2 = [SYSTEM_STATUS_TABLE + 1]; //current PID 
+    R3 = wordAddr; //wordAddress
+    call DEVICE_MANAGER;
+    multipop(R1,R2,R3,R4,R5);
+    [retValAddr] = 0;
+else 
+    if(fileDescriptor < 0 || fileDescriptor > 7) then 
+        [retValAddr] = -1;
+    else 
+        alias resourceAddr R6;
+        alias OFTentry R7;
+        alias inodeIdx R8;
+        alias lSeekAddr R9;
+        resourceAddr = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11]*512 + RESOURCE_TABLE_OFFSET + 2*fileDescriptor;
+        OFTentry = [resourceAddr+1];
+        inodeIdx = [OPEN_FILE_TABLE + OFTentry * 4];
+        if([resourceAddr] != FILE) then 
+            [retValAddr] = -1;
+        else 
+            multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+            R1 = ACQUIRE_INODE;
+            R2 = inodeIdx;
+            R3 = [SYSTEM_STATUS_TABLE + 1];
+            call RESOURCE_MANAGER;
+            multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+            if(R0 != 0) then 
+                [retValAddr] = -1;
+            else 
+                wordAddr = [[PTBR + 2*((userSP - 3)/512)]*512 + (userSP-3)%512];
+                wordAddr = [PTBR + 2*((wordAddr)/512)]*512 + (wordAddr)%512;
+                lSeekAddr = OPEN_FILE_TABLE + OFTentry * 4 + 2;
+                if(inodeIdx == INODE_ROOT)then 
+                    //If the lseek value is equal to the root file size(480), release_inode() return -2. 
+                    if([lSeekAddr] == 480) then 
+                        [retValAddr] = -2;
+                    else
+                        [wordAddr] = [ROOT_FILE + [lSeekAddr]];
+                        [lSeekAddr] = [lSeekAddr] + 1;
+                        [retValAddr] = 0;
+                        
+                    endif;
+                else 
+                    if([lSeekAddr] == [INODE_TABLE + inodeIdx*16 + 2]) then 
+                        [retValAddr] = -2;
+                    else 
+                        multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+                        R1 = BUFFERED_READ;
+                        R2 = [INODE_TABLE + inodeIdx*16 + 8 + [lSeekAddr]/512]; //disk block number 
+                        R3 = [lSeekAddr]%512;
+                        R4 = wordAddr;          
+                        call FILE_MANAGER;
+                        multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+                        [lSeekAddr] = [lSeekAddr] + 1;
+                        [retValAddr] = 0;
+                    endif;
+                endif;
+                multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+                R1 = RELEASE_INODE;
+                R2 = inodeIdx;
+                R3 = [SYSTEM_STATUS_TABLE+1];
+                call RESOURCE_MANAGER;
+                multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+            endif;
+        endif;
+    endif;  
+endif;
+
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 13];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 9] =  0;
+
+ireturn;

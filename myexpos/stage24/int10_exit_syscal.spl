@@ -1,0 +1,13 @@
+alias pid R0;
+
+pid = [SYSTEM_STATUS_TABLE + 1];
+
+[PROCESS_TABLE + pid*16 + 9] = 10;
+[PROCESS_TABLE + pid*16 + 13] = SP;
+SP = [PROCESS_TABLE + pid*16 + 11]*512 - 1;
+
+R1 = EXIT_PROCESS;
+R2 = pid;
+call PROCESS_MANAGER;
+
+call SCHEDULER;
